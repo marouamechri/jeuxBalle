@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Jeu Balle avec Obstacles et Sons</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="menu" style="display: block;">
+    <h1>Jeu de Balle</h1>
+    <button onclick="demarrerJeu()">Jouer</button>
+  </div>
+  <div id="fin">
+    <h2>💥 Tu as perdu !</h2>
+    <p id="scoreFinal"></p>
+    <button onclick="location.reload()">Rejouer</button>
+  </div>
+  <div id="score" style="display: none;">Score : 0</div>
+  <canvas id="jeuCanvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById("jeuCanvas");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const GRAVITE = 0.5;
+    const FRICTION = 0.9;
+
+    let jeuActif = false;
+    let tempsDebut = 0;
+    let balles = [];
+    let obstacles = [];
+
+    const touches = {
+      gauche: false,
+      droite: false,
+      haut: false,
+      bas: false,
+      saut: false
+    };
+
+    // Sons
+    const sonSaut = new Audio("mp3/jump.mp3");
+    const sonCollision = new Audio("mp3/hit.mp3");
+    const musique = new Audio("mp3/music.mp3");
+    musique.loop = true;
+
+    // Events clavier
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft") touches.gauche = true;
+      if (e.key === "ArrowRight") touches.droite = true;
+      if (e.key === " " || e.key === "ArrowUp") {
+        if (!touches.saut) {
+          touches.saut = true;
+          sonSaut.play();
+        }
+      }
+    });
+
+    document.addEventListener("keyup", (e) => {
+      if (e.key === "ArrowLeft") touches.gauche = false;
+      if (e.key === "ArrowRight") touches.droite = false;
+      if (e.key === " " || e.key === "ArrowUp") touches.saut = false;
+    });
+
+    function creerBalles() {
+      balles = [{
+        x: 100,
+        y: 100,
+        vx: 0,
+        vy: 0,
+        rayon: 20,
+        couleur: "#00ffff",
+        controlee: true,
+        peutSauter: false
+      }];
+    }
+
+    function creerObstacles() {
+      obstacles = [
+        { x: 300, y: canvas.height - 100, w: 150, h: 30 },
+        { x: 600, y: canvas.height - 200, w: 200, h: 30 },
+        { x: 900, y: canvas.height - 150, w: 100, h: 30 },
+      ];
+    }
+
+    function dessinerBalle(b) {
+      ctx.beginPath();
+      ctx.arc(b.x, b.y, b.rayon, 0, Math.PI * 2);
+      ctx.fillStyle = b.couleur;
+      ctx.fill();
+      ctx.closePath();
+    }
+
+    function dessinerObstacle(obs) {
+      ctx.fillStyle = "#ff4444";
+      ctx.fillRect(obs.x, obs.y, obs.w, obs.h);
+    }
+
+    function verifierCollisionObstacle(balle, obstacle) {
+      return (
+        balle.x + balle.rayon > obstacle.x &&
+        balle.x - balle.rayon < obstacle.x + obstacle.w &&
+        balle.y + balle.rayon > obstacle.y &&
+        balle.y - balle.rayon < obstacle.y + obstacle.h
+      );
+    }
+
+    function mettreAJour() {
+      if (!jeuActif) return;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const temps = Math.floor((Date.now() - tempsDebut) / 1000);
+      document.getElementById("score").textContent = `Score : ${temps}`;
+
+      for (let obs of obstacles) dessinerObstacle(obs);
+
+      for (let b of balles) {
+        b.vy += GRAVITE;
+
+        if (touches.gauche) b.vx -= 0.5;
+        if (touches.droite) b.vx += 0.5;
+
+        if (touches.saut && b.peutSauter) {
+          b.vy = -12;
+          b.peutSauter = false;
+        }
+
+        b.x += b.vx;
+        b.y += b.vy;
+
+        // Sol
+        if (b.y + b.rayon >= canvas.height) {
+          b.y = canvas.height - b.rayon;
+          b.vy *= -FRICTION;
+          b.peutSauter = true;
+        }
+
+        // Murs
+        if (b.x + b.rayon > canvas.width) {
+          b.x = canvas.width - b.rayon;
+          b.vx *= -FRICTION;
+        }
+        if (b.x - b.rayon < 0) {
+          b.x = b.rayon;
+          b.vx *= -FRICTION;
+        }
+
+        // Collision avec obstacles
+        for (let obs of obstacles) {
+          if (verifierCollisionObstacle(b, obs)) {
+            sonCollision.play();
+            finDePartie(temps);
+            return;
+          }
+        }
+
+        dessinerBalle(b);
+      }
+
+      requestAnimationFrame(mettreAJour);
+    }
+
+    function finDePartie(score) {
+      jeuActif = false;
+      musique.pause();
+      document.getElementById("score").style.display = "none";
+      document.getElementById("fin").style.display = "block";
+      document.getElementById("scoreFinal").textContent = `Score : ${score} secondes`;
+    }
+
+    function demarrerJeu() {
+      document.getElementById("menu").style.display = "none";
+      document.getElementById("score").style.display = "block";
+      musique.play();
+      creerBalles();
+      creerObstacles();
+      jeuActif = true;
+      tempsDebut = Date.now();
+      mettreAJour();
+    }
+  </script>
+</body>
+</html>
