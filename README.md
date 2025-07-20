@@ -34,13 +34,13 @@ Il s'agit d'un **mini-jeu interactif** développé avec **HTML5 Canvas** et **Ja
 
 /projet-balle-rebondissante/
 │
-├── index.html # Fichier principal avec HTML + JS
-├── mp3 
-      ├── jump.mp3 # Son de saut
-      ├── hit.mp3 # Son de collision
-      ├── music.mp3 # Musique de fond
-├── README.md # Présentation du projet
-└── style.css (optionnel)# Si tu veux séparer le CSS
+├── index.html         # Fichier principal avec le HTML et le JavaScript intégré
+├── style.css          # Fichier de styles CSS (séparé)
+├── README.md          # Présentation du projet
+└── mp3/               # Dossier contenant les fichiers audio
+    ├── jump.mp3       # Son du saut
+    ├── hit.mp3        # Son de collision avec un obstacle
+    └── music.mp3      # Musique de fond du jeu
 
 ---
 
